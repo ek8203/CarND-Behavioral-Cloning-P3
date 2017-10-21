@@ -18,7 +18,7 @@ import numpy as np
 
 # TODO: Use csv lib to read the driving_log.csv file
 # Read the measurements from the log file
-datalog_dir = "data\\"
+datalog_dir = "data/"
 lines = []
 with open(datalog_dir + "driving_log.csv") as csvfile:
     reader = csv.reader(csvfile)
@@ -43,7 +43,7 @@ for line in lines[1:]:
     # update the dir path of img files
     source_path = line[0]
     filename = source_path.split('\\')[-1]
-    current_path = datalog_dir +'IMG\\' + filename
+    current_path = datalog_dir +'IMG/' + filename
 
     # read a frame and add to the list
     image = cv2.imread(current_path)
@@ -55,7 +55,8 @@ for line in lines[1:]:
     else:
         print(line[3])
         print(filename)
-        
+
+
 # Add augmented images to the training dataset
 aug_images = []
 aug_measurements = []
@@ -76,14 +77,14 @@ y_train = np.array(aug_measurements)
 n_train = len(X_train)
 
 # set to False when training
-debug = False#True
+debug = True
 
 if debug:
     cv2.imshow( "Original", X_train[n_train//2 - 100] )
     cv2.imshow( "Flipped", X_train[-100] )
     cv2.waitKey(0)
     print(n_train)
-#exit()
+exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
