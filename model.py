@@ -77,14 +77,14 @@ y_train = np.array(aug_measurements)
 n_train = len(X_train)
 
 # set to False when training
-debug = True
+debug = False#True
 
 if debug:
     cv2.imshow( "Original", X_train[n_train//2 - 100] )
     cv2.imshow( "Flipped", X_train[-100] )
     cv2.waitKey(0)
     print(n_train)
-exit()
+#exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
