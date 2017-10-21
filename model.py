@@ -18,13 +18,15 @@ import numpy as np
 
 # TODO: Use csv lib to read the driving_log.csv file
 # Read the measurements from the log file
-datalog_dir = "data/"
+datalog_dir = "data\\"
 lines = []
 with open(datalog_dir + "driving_log.csv") as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         lines.append(line)
- 
+        #print(line)
+
+        
 # TODO: read the image frames and the steering angles
 def isfloat(value):
   try:
@@ -40,8 +42,8 @@ for line in lines[1:]:
     
     # update the dir path of img files
     source_path = line[0]
-    filename = source_path.split('/')[-1]
-    current_path = datalog_dir +'IMG/' + filename
+    filename = source_path.split('\\')[-1]
+    current_path = datalog_dir +'IMG\\' + filename
 
     # read a frame and add to the list
     image = cv2.imread(current_path)
@@ -77,12 +79,11 @@ n_train = len(X_train)
 debug = False#True
 
 if debug:
-    print(n_train)
-    cv2.imshow( "Original", X_train[n_train//2] )
-    cv2.imshow( "Flipped", X_train[-1] )
+    cv2.imshow( "Original", X_train[n_train//2 - 100] )
+    cv2.imshow( "Flipped", X_train[-100] )
     cv2.waitKey(0)
-
-exit()
+    print(n_train)
+#exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
@@ -92,6 +93,7 @@ from keras.layers.pooling import MaxPooling2D
 
 # Input shape for the model
 img_shape = X_train.shape[1:]
+print(img_shape)
 # One output (steering angle) to directly predict the steering angle
 num_classes = 1
 
@@ -112,22 +114,26 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Convolution2D(6, 5, 5, activation='relu'))
 # POOL: 2x2 max pooling layer immediately following your convolutional layer
 model.add(MaxPooling2D(pool_size=(2, 2)))
+
 # FLATTEN: 400
 model.add(Flatten())
+
 # FC: 120 and ReLU activation 
 model.add(Dense(120, activation='relu'))
 # FC: 84 and ReLU activation
 model.add(Dense(84, activation='relu'))
+
 # FC: 1
 model.add(Dense(num_classes))
 #exit()
 
+n_epoch=6
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 #The model has to minimize the error between the predicted steering measurements and the true measurements
 model.compile(optimizer='adam', loss='mse')
 # Split the data for train and validation sets and suffle the data
 # Train on 3 epochs to test
-model.fit(X_train, y_train, nb_epoch=6, validation_split=0.2, shuffle=True)
+model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
 
 # Save the trained model for the test run with the simulator
 model.save("model.h5")  
