@@ -58,10 +58,13 @@ for line in lines[1:]:
 X_train = np.array(images)
 y_train = np.array(measurements)
 
+#exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
-from keras.layers import Input, Flatten, Dense
+from keras.layers import Input, Flatten, Dense, Lambda
+from keras.layers.convolutional import Convolution2D
+from keras.layers.pooling import MaxPooling2D
 
 # Input shape for the model
 img_shape = X_train.shape[1:]
@@ -70,8 +73,30 @@ num_classes = 1
 
 model = Sequential()
 
-model.add(Flatten(input_shape=img_shape))
+# Image normalization. That lambda layer could take each pixel in an image and run it through the formulas:
+# pixel_normalized = pixel / 255
+# pixel_mean_centered = pixel_normalized - 0.5
+model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=img_shape))
+
+# Implement Lenet5 model architecture:
+# INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
+# CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
+model.add(Convolution2D(6, 5, 5, activation='relu'))
+# POOL: 2x2 max pooling layer immediately following your convolutional layer
+model.add(MaxPooling2D(pool_size=(2, 2)))
+# CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
+model.add(Convolution2D(6, 5, 5, activation='relu'))
+# POOL: 2x2 max pooling layer immediately following your convolutional layer
+model.add(MaxPooling2D(pool_size=(2, 2)))
+# FLATTEN: 400
+model.add(Flatten())
+# FC: 120 and ReLU activation 
+model.add(Dense(120, activation='relu'))
+# FC: 84 and ReLU activation
+model.add(Dense(84, activation='relu'))
+# FC: 1
 model.add(Dense(num_classes))
+#exit()
 
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 #The model has to minimize the error between the predicted steering measurements and the true measurements
@@ -82,6 +107,7 @@ model.fit(X_train, y_train, nb_epoch=6, validation_split=0.2, shuffle=True)
 
 # Save the trained model for the test run with the simulator
 model.save("model.h5")  
+#exit()
    
     
     
