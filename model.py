@@ -54,11 +54,35 @@ for line in lines[1:]:
         print(line[3])
         print(filename)
         
-# Copy angles and images to Numpy arrays
-X_train = np.array(images)
-y_train = np.array(measurements)
+# Add augmented images to the training dataset
+aug_images = []
+aug_measurements = []
 
-#exit()
+for image, steer_ang in zip(images, measurements):
+    # add original data
+    aug_images.append(image)
+    aug_measurements.append(steer_ang)
+    # add augmented images - flipped vertically (flipCode = 1)
+    aug_images.append(cv2.flip(image, 1))
+    # reverse the angles
+    aug_measurements.append(steer_ang * (-1.))
+
+# Add angles and images to Numpy arrays
+X_train = np.array(aug_images)
+y_train = np.array(aug_measurements)
+
+n_train = len(X_train)
+
+# set to False when training
+debug = False#True
+
+if debug:
+    print(n_train)
+    cv2.imshow( "Original", X_train[n_train//2] )
+    cv2.imshow( "Flipped", X_train[-1] )
+    cv2.waitKey(0)
+
+exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
