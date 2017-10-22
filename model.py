@@ -77,14 +77,16 @@ y_train = np.array(aug_measurements)
 n_train = len(X_train)
 
 # set to False when training
-debug = False#True
+debug = False
 
-if debug:
-    cv2.imshow( "Original", X_train[n_train//2 - 100] )
-    cv2.imshow( "Flipped", X_train[-100] )
+if debug: 
+    print("Total: {}".format(n_train))
+    print("Original angle: {}".format(y_train[500]))
+    print("Flipped angle:  {}".format(y_train[501]))
+    cv2.imshow( "Original", X_train[500] )
+    cv2.imshow( "Flipped", X_train[501] )
     cv2.waitKey(0)
-    print(n_train)
-#exit()
+    exit()
 
 # Build a simple Keras model
 from keras.models import Sequential
@@ -104,7 +106,8 @@ model = Sequential()
 # pixel_normalized = pixel / 255
 # pixel_mean_centered = pixel_normalized - 0.5
 model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=img_shape))
-
+# Cropping the hood from bottom and the background from top of the image
+model.add(Cropping2D(cropping=((70,25), (0,0))))
 # Implement Lenet5 model architecture:
 # INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
 # CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
