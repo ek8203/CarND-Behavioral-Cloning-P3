@@ -121,15 +121,13 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 
 # FLATTEN: 400
 model.add(Flatten())
-model.add(Dropout(0.75))
+model.add(Dropout(0.5))
 
 # FC: 120 and ReLU activation 
 model.add(Dense(120, activation='relu'))
-model.add(Dropout(0.75))
 
 # FC: 84 and ReLU activation
 model.add(Dense(84, activation='relu'))
-model.add(Dropout(0.75))
 
 # FC: 1
 model.add(Dense(num_classes))
