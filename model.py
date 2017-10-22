@@ -90,7 +90,7 @@ if debug:
 
 # Build a simple Keras model
 from keras.models import Sequential
-from keras.layers import Input, Flatten, Dense, Lambda
+from keras.layers import Input, Flatten, Dense, Lambda, Cropping2D, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 
@@ -121,11 +121,15 @@ model.add(MaxPooling2D(pool_size=(2, 2)))
 
 # FLATTEN: 400
 model.add(Flatten())
+model.add(Dropout(0.75))
 
 # FC: 120 and ReLU activation 
 model.add(Dense(120, activation='relu'))
+model.add(Dropout(0.75))
+
 # FC: 84 and ReLU activation
 model.add(Dense(84, activation='relu'))
+model.add(Dropout(0.75))
 
 # FC: 1
 model.add(Dense(num_classes))
