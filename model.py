@@ -38,24 +38,21 @@ def isfloat(value):
 images = []
 measurements = []
 # the first line is the header - to be excluded
-for line in lines[1:]:
-    
+for line in lines:  
     # update the dir path of img files
-    source_path = line[0]
-    filename = source_path.split('\\')[-1]
-    current_path = datalog_dir +'IMG/' + filename
-
-    # read a frame and add to the list
-    image = cv2.imread(current_path)
-    
-    if isfloat(line[3]):
-        steer_ang = float(line[3])
-        measurements.append(steer_ang)
+    for i in range(3):
+        source_path = line[i]
+        filename = source_path.split('\\')[-1]
+        current_path = datalog_dir +'IMG/' + filename
+        # read a frame and add to the list
+        image = cv2.imread(current_path)    
         images.append(image)
-    else:
-        print(line[3])
-        print(filename)
-
+        steer_ang = float(line[3])
+        if i == 1:
+            steer_ang = steer_ang + 0.2
+        elif i == 2:
+            steer_ang = steer_ang - 0.2
+        measurements.append(steer_ang)        
 
 # Add augmented images to the training dataset
 aug_images = []
