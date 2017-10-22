@@ -28,48 +28,71 @@ with open(datalog_dir + "driving_log.csv") as csvfile:
 
         
 # TODO: read the image frames and the steering angles
-def isfloat(value):
-  try:
-    float(value)
-    return True
-  except:
-    return False
+
+def get_image_angle(src_path):
+    
+    # update the dir path of img files
+    filename = src_path.split('\\')[-1]
+    current_path = datalog_dir +'IMG/' + filename
+    
+    # read a frame and add to the list
+    image = cv2.imread(current_path)
+    
+    return image
+
 
 images = []
 measurements = []
-# the first line is the header - to be excluded
-for line in lines:  
-    # update the dir path of img files
-    for i in range(3):
-        source_path = line[i]
-        filename = source_path.split('\\')[-1]
-        current_path = datalog_dir +'IMG/' + filename
-        # read a frame and add to the list
-        image = cv2.imread(current_path)    
-        images.append(image)
-        steer_ang = float(line[3])
-        if i == 1:
-            steer_ang = steer_ang + 0.2
-        elif i == 2:
-            steer_ang = steer_ang - 0.2
-        measurements.append(steer_ang)        
+images_left = []
+measurements_left = []
+images_right = []
+measurements_right = []
 
-# Add augmented images to the training dataset
+# the first line is the header - to be excluded
+for line in lines:
+    steering_center = float(line[3])
+
+    # create adjusted steering measurements for the side camera images
+    correction = 0.2 # this is a parameter to tune
+    steering_left = steering_center + correction
+    steering_right = steering_center - correction
+    
+    # center camera image
+    image = get_image_angle(line[0])
+    images.append(image)    
+    measurements.append(steering_center)        
+
+    # left camera image
+    image = get_image_angle(line[1])
+    images_left.append(image)    
+    measurements_left.append(steering_left)        
+
+    # right camera image
+    image = get_image_angle(line[2])
+    images_right.append(image)    
+    measurements_right.append(steering_right)        
+    
+# Add augmented center camera images to the training dataset
 aug_images = []
 aug_measurements = []
 
 for image, steer_ang in zip(images, measurements):
-    # add original data
-    aug_images.append(image)
-    aug_measurements.append(steer_ang)
     # add augmented images - flipped vertically (flipCode = 1)
     aug_images.append(cv2.flip(image, 1))
     # reverse the angles
     aug_measurements.append(steer_ang * (-1.))
 
+# add images and angles to the center camera dataset
+images.extend(aug_images)
+images.extend(images_left)
+images.extend(images_right)
+measurements.extend(aug_measurements)
+measurements.extend(measurements_left)
+measurements.extend(measurements_right)    
+
 # Add angles and images to Numpy arrays
-X_train = np.array(aug_images)
-y_train = np.array(aug_measurements)
+X_train = np.array(images)
+y_train = np.array(measurements)
 
 n_train = len(X_train)
 
