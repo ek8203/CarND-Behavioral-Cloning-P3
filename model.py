@@ -134,8 +134,8 @@ model.add(Cropping2D(cropping=((70,25), (0,0))))
 model.add(Convolution2D(6, 5, 5, activation='relu'))
 # POOL: 2x2 max pooling layer immediately following your convolutional layer
 model.add(MaxPooling2D(pool_size=(2, 2)))
-# CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
-model.add(Convolution2D(6, 5, 5, activation='relu'))
+# CONV->ACT: 16 filters, 5x5 kernel, valid padding and ReLU activation.
+model.add(Convolution2D(16, 5, 5, activation='relu'))
 # POOL: 2x2 max pooling layer immediately following your convolutional layer
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
