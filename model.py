@@ -37,7 +37,8 @@ def get_image_angle(src_path):
     
     # read a frame and add to the list
     image = cv2.imread(current_path)
-    
+    # convert BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
 
 
@@ -120,38 +121,67 @@ print(img_shape)
 # One output (steering angle) to directly predict the steering angle
 num_classes = 1
 
-model = Sequential()
+def InputNormalized(shape):
+    """
+    Model input and normalization layers.
+    """
+    model = Sequential()
+    # Image normalization. That lambda layer could take each pixel in an image and run it through the formulas:
+    # pixel_normalized = pixel / 255
+    # pixel_mean_centered = pixel_normalized - 0.5
+    model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=shape))
+    # Cropping the hood from bottom and the background from top of the image    
+    model.add(Cropping2D(cropping=((50,25), (0,0))))
+    return model
+    
+def LeNet(shape, keep_prob=1.0):
+    """
+    LeNet-5 model architecture:
+    INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
+    """
+    # INPUT:
+    model = InputNormalized(shape)
+    # CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
+    model.add(Convolution2D(6, 5, 5, activation='relu'))
+    # POOL: 2x2 max pooling layer immediately following your convolutional layer
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # CONV->ACT: 16 filters, 5x5 kernel, valid padding and ReLU activation.
+    model.add(Convolution2D(16, 5, 5, activation='relu'))
+    # POOL: 2x2 max pooling layer immediately following your convolutional layer
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # FLATTEN: 400
+    model.add(Flatten())
+    model.add(Dropout(keep_prob))
+    # FC: 120 and ReLU activation 
+    model.add(Dense(120, activation='relu'))
+    # FC: 84 and ReLU activation
+    model.add(Dense(84, activation='relu'))
+    # FC: 1
+    model.add(Dense(1))
+    return model
+    
+def nVidia(shape):
+    """
+    nVidea model architecture:
+    INPUT -> 3x(CONV -> ACT) -> 2x(CONV -> ACT)-> FLATTEN -> 4xFC
+    """
+    model = InputNormalized(shape)
+    model.add(Convolution2D(24,5,5, subsample=(2,2), activation='relu'))
+    model.add(Convolution2D(36,5,5, subsample=(2,2), activation='relu'))
+    model.add(Convolution2D(48,5,5, subsample=(2,2), activation='relu'))
+    model.add(Convolution2D(64,3,3, activation='relu'))
+    model.add(Convolution2D(64,3,3, activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(100))
+    model.add(Dense(50))
+    model.add(Dense(10))
+    model.add(Dense(1))
+    return model
 
-# Image normalization. That lambda layer could take each pixel in an image and run it through the formulas:
-# pixel_normalized = pixel / 255
-# pixel_mean_centered = pixel_normalized - 0.5
-model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=img_shape))
-# Cropping the hood from bottom and the background from top of the image
-model.add(Cropping2D(cropping=((70,25), (0,0))))
-# Implement Lenet5 model architecture:
-# INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
-# CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
-model.add(Convolution2D(6, 5, 5, activation='relu'))
-# POOL: 2x2 max pooling layer immediately following your convolutional layer
-model.add(MaxPooling2D(pool_size=(2, 2)))
-# CONV->ACT: 16 filters, 5x5 kernel, valid padding and ReLU activation.
-model.add(Convolution2D(16, 5, 5, activation='relu'))
-# POOL: 2x2 max pooling layer immediately following your convolutional layer
-model.add(MaxPooling2D(pool_size=(2, 2)))
-
-# FLATTEN: 400
-model.add(Flatten())
-model.add(Dropout(0.5))
-
-# FC: 120 and ReLU activation 
-model.add(Dense(120, activation='relu'))
-
-# FC: 84 and ReLU activation
-model.add(Dense(84, activation='relu'))
-
-# FC: 1
-model.add(Dense(num_classes))
 #exit()
+
+#model = LenNet(img_shape)
+model = nVidia(img_shape)
 
 n_epoch=6
 # Use Adam optimizer and MSE loss function because it is a regression network. 
