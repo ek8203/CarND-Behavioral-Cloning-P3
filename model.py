@@ -6,50 +6,115 @@ Created on Thu Oct 19 23:07:37 2017
 """
 
 """
-TODO: Complete the header with description
-    
-This file containing the python script to create and train the model 
-to clone driving behavior.
+This file containing the python script to create and train a model to clone driving behavior.
 """
-# import modules
+# Import modules
 import csv
 import cv2
 import numpy as np
 
-# TODO: Use csv lib to read the driving_log.csv file
-# Read the measurements from the log file
+# Use csv lib to read the measurements from the driving_log.csv file
 datalog_dir = "data/"
 lines = []
 with open(datalog_dir + "driving_log.csv") as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         lines.append(line)
-        #print(line)
-
+print("loaded")
         
-# TODO: read the image frames and the steering angles
-
-def get_image_angle(src_path):
-    
+def read_image(src_path):
+    """
+    Read the image frames
+    """    
     # update the dir path of img files
     filename = src_path.split('\\')[-1]
-    current_path = datalog_dir +'IMG/' + filename
-    
+    current_path = datalog_dir +'IMG/' + filename    
     # read a frame and add to the list
     image = cv2.imread(current_path)
-    # convert BGR to RGB
+    # convert BGR to RGB since the test simulator (drive.py) is using RGB format
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # resize
+    #image = cv2.resize(image, (64, 64), interpolation = cv2.INTER_AREA)
     return image
+    
+import sklearn
+def generator(samples, correction = 0.2, batch_size=32):
+    """
+    Input batch data generator
+    """
+    num_samples = (len(samples)//batch_size)*batch_size
+    
+    while True: # Loop forever so the generator never terminates
+        sklearn.utils.shuffle(samples)
+        
+        #X_batch = np.zeros((batch_size, 160, 320, 3), dtype=np.float32)
+        #y_batch = np.zeros((batch_size,), dtype=np.float32)
+        
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset+batch_size]
 
+            images = []
+            angles = []
+            
+            for batch_sample in batch_samples:
+                # get and adjust steering angles
+                steering_center = float(batch_sample[3])
+                steering_left = steering_center + correction
+                steering_right = steering_center - correction
+                
+                # center camera image
+                image = read_image(line[0])
+                images.append(image)    
+                angles.append(steering_center)
+                # add augmented images - flipped vertically (flipCode = 1)
+                images.append(cv2.flip(image, 1))
+                # reverse the angles
+                angles.append(steering_center * (-1.))
 
-images = []
-measurements = []
-images_left = []
-measurements_left = []
-images_right = []
-measurements_right = []
+                # left camera image
+                image = read_image(line[1])
+                images.append(image)    
+                angles.append(steering_left)        
+                # add augmented images - flipped vertically (flipCode = 1)
+                images.append(cv2.flip(image, 1))
+                # reverse the angles
+                angles.append(steering_left * (-1.))
 
-# the first line is the header - to be excluded
+                # right camera image
+                image = read_image(line[2])
+                images.append(image)    
+                angles.append(steering_right)        
+                # add augmented images - flipped vertically (flipCode = 1)
+                images.append(cv2.flip(image, 1))
+                # reverse the angles
+                angles.append(steering_right * (-1.))
+
+            # trim image to only see section with road
+            X_train = np.array(images)
+            y_train = np.array(angles)
+            yield sklearn.utils.shuffle(X_train, y_train)
+
+   
+# compile and train the model using the generator function
+from sklearn.model_selection import train_test_split
+train_samples, validation_samples = train_test_split(lines, test_size=0.2)
+
+train_generator = generator(train_samples, batch_size=32)
+
+# test the generator
+for i in range(3):
+    X,y = next(train_generator)
+    print(X.shape, y.shape)
+print("done")
+#exit()
+            
+
+validation_generator = generator(validation_samples, batch_size=32)
+
+print(len(train_samples), len(validation_samples))
+
+"""
+
 for line in lines:
     steering_center = float(line[3])
 
@@ -108,33 +173,38 @@ if debug:
     cv2.imshow( "Flipped", X_train[501] )
     cv2.waitKey(0)
     exit()
+"""
 
 # Build a simple Keras model
 from keras.models import Sequential
-from keras.layers import Input, Flatten, Dense, Lambda, Cropping2D, Dropout
+from keras.layers import Input, Flatten, Dense, Lambda, Cropping2D, Dropout, Reshape
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 
-# Input shape for the model
-img_shape = X_train.shape[1:]
-print(img_shape)
-# One output (steering angle) to directly predict the steering angle
-num_classes = 1
+shape = (160,320,3)
+#shape = (32,32,3)
+
+def resize_image(input):
+    from keras.backend import tf as ktf
+    return ktf.image.resize_images(input, (64, 64))
+
 
 def InputNormalized(shape):
     """
     Model input and normalization layers.
     """
+    #Sequential(shape=(batch_size, height, width, channels))
     model = Sequential()
+    # Cropping the hood from bottom and the background from top of the image    
+    model.add(Cropping2D(cropping=((50,25), (0,0)), input_shape=shape))
+    model.add(Lambda(resize_image))
     # Image normalization. That lambda layer could take each pixel in an image and run it through the formulas:
     # pixel_normalized = pixel / 255
     # pixel_mean_centered = pixel_normalized - 0.5
-    model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=shape))
-    # Cropping the hood from bottom and the background from top of the image    
-    model.add(Cropping2D(cropping=((50,25), (0,0))))
+    model.add(Lambda(lambda x: (x / 255.0) - 0.5))#, input_shape=shape))
     return model
     
-def LeNet(shape, keep_prob=1.0):
+def LeNet(shape=(160,320,3), keep_prob=1.0):
     """
     LeNet-5 model architecture:
     INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
@@ -160,7 +230,7 @@ def LeNet(shape, keep_prob=1.0):
     model.add(Dense(1))
     return model
     
-def nVidia(shape):
+def nVidia(shape=(160,320,3)):
     """
     nVidea model architecture:
     INPUT -> 3x(CONV -> ACT) -> 2x(CONV -> ACT)-> FLATTEN -> 4xFC
@@ -180,17 +250,27 @@ def nVidia(shape):
 
 #exit()
 
-#model = LenNet(img_shape)
-model = nVidia(img_shape)
+#model = LeNet(shape)
+model = nVidia()
 
 n_epoch=6
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 #The model has to minimize the error between the predicted steering measurements and the true measurements
 model.compile(optimizer='adam', loss='mse')
 # Split the data for train and validation sets and suffle the data
-# Train on 3 epochs to test
-model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
+#model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
 
+history = model.fit_generator(train_generator, samples_per_epoch=len(train_samples), 
+                    validation_data=validation_generator, nb_val_samples=len(validation_samples), nb_epoch=n_epoch)
+
+#history_object = model.fit_generator(train_generator, samples_per_epoch=len(train_samples)/batch_size,
+#                        validation_data=validation_generator, nb_val_samples=len(validation_samples),nb_epoch=7)
+
+#print(model.summary())
+                    
+#print("done")
+#exit()
+            
 # Save the trained model for the test run with the simulator
 model.save("model.h5")  
 #exit()
