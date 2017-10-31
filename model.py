@@ -99,17 +99,16 @@ def generator(samples, correction = 0.2, batch_size=32):
 from sklearn.model_selection import train_test_split
 train_samples, validation_samples = train_test_split(lines, test_size=0.2)
 
-train_generator = generator(train_samples, batch_size=32)
+BATCH_SIZE =32
+train_generator = generator(train_samples, batch_size=BATCH_SIZE)
+validation_generator = generator(validation_samples, batch_size=BATCH_SIZE)
 
 # test the generator
 for i in range(3):
     X,y = next(train_generator)
     print(X.shape, y.shape)
 print("done")
-#exit()
-            
-
-validation_generator = generator(validation_samples, batch_size=32)
+#exit()         
 
 print(len(train_samples), len(validation_samples))
 
@@ -186,6 +185,8 @@ shape = (160,320,3)
 
 def resize_image(input):
     from keras.backend import tf as ktf
+#    return ktf.image.resize_images(input, (66, 200))
+#    return ktf.image.resize_images(input, (32, 32))
     return ktf.image.resize_images(input, (64, 64))
 
 
@@ -204,7 +205,33 @@ def InputNormalized(shape):
     model.add(Lambda(lambda x: (x / 255.0) - 0.5))#, input_shape=shape))
     return model
     
-def LeNet(shape=(160,320,3), keep_prob=1.0):
+def LeNet(shape=(160,320,3), keep_prob=0.3):
+    """
+    LeNet-5 model architecture:
+    INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
+    """
+    # INPUT:
+    model = InputNormalized(shape)
+    # CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
+    model.add(Convolution2D(16, 5, 5, activation='relu'))
+    # POOL: 2x2 max pooling layer immediately following your convolutional layer
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # CONV->ACT: 16 filters, 5x5 kernel, valid padding and ReLU activation.
+    model.add(Convolution2D(32, 5, 5, activation='relu'))
+    # POOL: 2x2 max pooling layer immediately following your convolutional layer
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # FLATTEN: 400
+    model.add(Flatten())
+    model.add(Dropout(keep_prob))
+    # FC: 120 and ReLU activation 
+    model.add(Dense(400, activation='relu'))
+    # FC: 84 and ReLU activation
+    model.add(Dense(120, activation='relu'))
+    # FC: 1
+    model.add(Dense(1))
+    return model
+
+def LeNet_1(shape=(160,320,3), keep_prob=1.0):
     """
     LeNet-5 model architecture:
     INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
@@ -242,6 +269,7 @@ def nVidia(shape=(160,320,3)):
     model.add(Convolution2D(64,3,3, activation='relu'))
     model.add(Convolution2D(64,3,3, activation='relu'))
     model.add(Flatten())
+    #model.add(Dropout(0.5))
     model.add(Dense(100))
     model.add(Dense(50))
     model.add(Dense(10))
@@ -250,10 +278,10 @@ def nVidia(shape=(160,320,3)):
 
 #exit()
 
-#model = LeNet(shape)
+#model = LeNet()
 model = nVidia()
 
-n_epoch=6
+n_epoch = 6
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 #The model has to minimize the error between the predicted steering measurements and the true measurements
 model.compile(optimizer='adam', loss='mse')
