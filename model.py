@@ -12,6 +12,7 @@ This file containing the python script to create and train a model to clone driv
 import csv
 import cv2
 import numpy as np
+import sklearn
 
 # Use csv lib to read the measurements from the driving_log.csv file
 datalog_dir = "data/"
@@ -20,24 +21,92 @@ with open(datalog_dir + "driving_log.csv") as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         lines.append(line)
-print("loaded")
         
 def read_image(src_path):
     """
-    Read the image frames
+    Read an image frame from file
+    Input: src_path - full name (string) of the image file
+    Returns: image data in RGB format
     """    
-    # update the dir path of img files
+    # update the dir path of the image file
     filename = src_path.split('\\')[-1]
     current_path = datalog_dir +'IMG/' + filename    
     # read a frame and add to the list
     image = cv2.imread(current_path)
     # convert BGR to RGB since the test simulator (drive.py) is using RGB format
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    # resize
-    #image = cv2.resize(image, (64, 64), interpolation = cv2.INTER_AREA)
     return image
+
+"""
+Below are two methods of training the models:
+Method 1: training on the dataset of the entire training data
+Method 2: training on the batch data - a subset of the training data
+"""
+use_generator = True
+
+# Method 1
+def load_all_data(lines):
+    """
+    1. Load all images and measurements at once. 
+    2. Build augmented images and measurements
+    3. Put all together in one training dataset
+    Returns Numpy arrays of the training dataset 
+    """    
+    # Placeholders
+    images = []
+    measurements = []
+    images_left = []
+    measurements_left = []
+    images_right = []
+    measurements_right = []
+    aug_images = []
+    aug_measurements = []
+
+    # Load all collected data
+    for line in lines:
+        steering_center = float(line[3])
+        # create adjusted steering measurements for the side camera images
+        correction = 0.2 # this is a parameter to tune
+        steering_left = steering_center + correction
+        steering_right = steering_center - correction
     
-import sklearn
+        # center camera image
+        image = read_image(line[0])
+        images.append(image)    
+        measurements.append(steering_center)        
+
+        # left camera image
+        image = read_image(line[1])
+        images_left.append(image)    
+        measurements_left.append(steering_left)        
+
+        # right camera image
+        image = get_image_angle(line[2])
+        images_right.append(image)    
+        measurements_right.append(steering_right)
+
+    # Build augmented center camera images
+    for image, steer_ang in zip(images, measurements):
+        # augmented images - flipped vertically (flipCode = 1)
+        aug_images.append(cv2.flip(image, 1))
+        # reverse the angles
+        aug_measurements.append(steer_ang * (-1.))
+
+    # Put everything together in one training dataset
+    images.extend(aug_images)
+    images.extend(images_left)
+    images.extend(images_right)
+    measurements.extend(aug_measurements)
+    measurements.extend(measurements_left)
+    measurements.extend(measurements_right)
+    
+    # Put the training dataset in Numpy arrays
+    X_train = np.array(images)
+    y_train = np.array(measurements)
+    
+    return X_train, y_train
+
+# Method 2
 def generator(samples, correction = 0.2, batch_size=32):
     """
     Input batch data generator
@@ -95,70 +164,7 @@ def generator(samples, correction = 0.2, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
    
-# compile and train the model using the generator function
-from sklearn.model_selection import train_test_split
-train_samples, validation_samples = train_test_split(lines, test_size=0.2)
-
-BATCH_SIZE =32
-train_generator = generator(train_samples, batch_size=BATCH_SIZE)
-validation_generator = generator(validation_samples, batch_size=BATCH_SIZE)
-
-# test the generator
-for i in range(3):
-    X,y = next(train_generator)
-    print(X.shape, y.shape)
-print("done")
-#exit()         
-
-print(len(train_samples), len(validation_samples))
-
 """
-
-for line in lines:
-    steering_center = float(line[3])
-
-    # create adjusted steering measurements for the side camera images
-    correction = 0.2 # this is a parameter to tune
-    steering_left = steering_center + correction
-    steering_right = steering_center - correction
-    
-    # center camera image
-    image = get_image_angle(line[0])
-    images.append(image)    
-    measurements.append(steering_center)        
-
-    # left camera image
-    image = get_image_angle(line[1])
-    images_left.append(image)    
-    measurements_left.append(steering_left)        
-
-    # right camera image
-    image = get_image_angle(line[2])
-    images_right.append(image)    
-    measurements_right.append(steering_right)        
-    
-# Add augmented center camera images to the training dataset
-aug_images = []
-aug_measurements = []
-
-for image, steer_ang in zip(images, measurements):
-    # add augmented images - flipped vertically (flipCode = 1)
-    aug_images.append(cv2.flip(image, 1))
-    # reverse the angles
-    aug_measurements.append(steer_ang * (-1.))
-
-# add images and angles to the center camera dataset
-images.extend(aug_images)
-images.extend(images_left)
-images.extend(images_right)
-measurements.extend(aug_measurements)
-measurements.extend(measurements_left)
-measurements.extend(measurements_right)    
-
-# Add angles and images to Numpy arrays
-X_train = np.array(images)
-y_train = np.array(measurements)
-
 n_train = len(X_train)
 
 # set to False when training
@@ -281,26 +287,50 @@ def nVidia(shape=(160,320,3)):
 #model = LeNet()
 model = nVidia()
 
-n_epoch = 6
 # Use Adam optimizer and MSE loss function because it is a regression network. 
-#The model has to minimize the error between the predicted steering measurements and the true measurements
+# The model has to minimize the error between the predicted steering measurements and the true measurements
 model.compile(optimizer='adam', loss='mse')
-# Split the data for train and validation sets and suffle the data
-#model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
 
-history = model.fit_generator(train_generator, samples_per_epoch=len(train_samples), 
-                    validation_data=validation_generator, nb_val_samples=len(validation_samples), nb_epoch=n_epoch)
+print("Number of measurement lines:\t{}".format(len(lines)))
 
-#history_object = model.fit_generator(train_generator, samples_per_epoch=len(train_samples)/batch_size,
-#                        validation_data=validation_generator, nb_val_samples=len(validation_samples),nb_epoch=7)
+if use_generator:
+    """
+    Train the model using the generator function
+    """
+    # Split collected data into a train and validation datasets
+    from sklearn.model_selection import train_test_split
+    train_samples, validation_samples = train_test_split(lines, test_size=0.2)
+    print("Number of train samples:\t{}".format(len(train_samples)))
+    print("Number of validation samples:\t{}".format(len(validation_samples)))
 
-#print(model.summary())
+    BATCH_SIZE = 32
+    EPOCHS = 2
+    
+    train_generator         = generator(train_samples, batch_size = BATCH_SIZE)
+    validation_generator    = generator(validation_samples, batch_size = BATCH_SIZE)
+
+    # test the generator
+    #for i in range(3):
+    #    X,y = next(train_generator)
+    #    print(X.shape, y.shape)
+
+    #exit()         
+
+    history = model.fit_generator(train_generator, samples_per_epoch = len(train_samples), 
+                    validation_data = validation_generator, nb_val_samples = len(validation_samples), nb_epoch = EPOCHS)
+else:
+    # Split the data for train and validation sets and suffle the data
+    model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
+
+print(model.summary())
                     
-#print("done")
+#print("Done")
 #exit()
             
 # Save the trained model for the test run with the simulator
 model.save("model.h5")  
+print("Model saved")
+
 #exit()
    
     
