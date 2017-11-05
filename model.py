@@ -112,13 +112,9 @@ def generator(samples, correction = 0.2, batch_size=32):
     Input batch data generator
     """
     num_samples = (len(samples)//batch_size)*batch_size
-#    num_samples = len(samples)
     
     while True: # Loop forever so the generator never terminates
         sklearn.utils.shuffle(samples)
-        
-        #X_batch = np.zeros((batch_size, 160, 320, 3), dtype=np.float32)
-        #y_batch = np.zeros((batch_size,), dtype=np.float32)
         
         for offset in range(0, num_samples, batch_size):
             batch_samples = samples[offset:offset+batch_size]
@@ -162,24 +158,7 @@ def generator(samples, correction = 0.2, batch_size=32):
             X_train = np.array(images)
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
-
    
-"""
-n_train = len(X_train)
-
-# set to False when training
-debug = False
-
-if debug: 
-    print("Total: {}".format(n_train))
-    print("Original angle: {}".format(y_train[500]))
-    print("Flipped angle:  {}".format(y_train[501]))
-    cv2.imshow( "Original", X_train[500] )
-    cv2.imshow( "Flipped", X_train[501] )
-    cv2.waitKey(0)
-    exit()
-"""
-
 # Build a simple Keras model
 from keras.models import Sequential
 from keras.layers import Input, Flatten, Dense, Lambda, Cropping2D, Dropout, Reshape
@@ -192,8 +171,6 @@ def grayscale_image(input):
 
 def resize_image(input):
     from keras.backend import tf as ktf
-#    return ktf.image.resize_images(input, (66, 200))
-#    return ktf.image.resize_images(input, (32, 32))
     return ktf.image.resize_images(input, (64, 64))
 
 def InputNormalized(shape=(160,320,3)):
@@ -215,7 +192,7 @@ def InputNormalized(shape=(160,320,3)):
     model.add(Lambda(lambda x: (x / 255.0) - 0.5))
     return model
     
-def LeNet(shape=(160,320,3), keep_prob=0.3):
+def LeNet(shape=(160,320,3), keep_prob=0.5):
     """
     LeNet-5 model architecture:
     INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
@@ -237,32 +214,6 @@ def LeNet(shape=(160,320,3), keep_prob=0.3):
     model.add(Dense(400, activation='relu'))
     # FC: 120 and ReLU activation
     model.add(Dense(120, activation='relu'))
-    # FC: 1
-    model.add(Dense(1))
-    return model
-
-def LeNet_1(shape=(160,320,3), keep_prob=1.0):
-    """
-    LeNet-5 model architecture:
-    INPUT -> CONV -> ACT -> POOL -> CONV -> ACT -> POOL -> FLATTEN -> FC -> ACT -> FC
-    """
-    # INPUT:
-    model = InputNormalized(shape)
-    # CONV->ACT: 6 filters, 5x5 kernel, valid padding and ReLU activation.
-    model.add(Convolution2D(6, 5, 5, activation='relu'))
-    # POOL: 2x2 max pooling layer immediately following your convolutional layer
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    # CONV->ACT: 16 filters, 5x5 kernel, valid padding and ReLU activation.
-    model.add(Convolution2D(16, 5, 5, activation='relu'))
-    # POOL: 2x2 max pooling layer immediately following your convolutional layer
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    # FLATTEN: 400
-    model.add(Flatten())
-    #model.add(Dropout(keep_prob))
-    # FC: 120 and ReLU activation 
-    model.add(Dense(120, activation='relu'))
-    # FC: 84 and ReLU activation
-    model.add(Dense(84, activation='relu'))
     # FC: 1
     model.add(Dense(1))
     return model
@@ -290,10 +241,8 @@ def nVidia(shape=(160,320,3), keep_prob=1.0):
     model.add(Dense(1))
     return model
 
-#exit()
-
-#model = LeNet(keep_prob=0.2)
-model = nVidia(keep_prob=0.05)
+model = LeNet(keep_prob=0.3)
+#model = nVidia(keep_prob=0.05)
 
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 # The model has to minimize the error between the predicted steering measurements and the true measurements
@@ -321,7 +270,6 @@ if use_generator:
     #for i in range(3):
     #    X,y = next(train_generator)
     #    print(X.shape, y.shape)
-
     #exit()         
 
     history = model.fit_generator(train_generator, samples_per_epoch = len(train_samples), 
@@ -330,7 +278,7 @@ else:
     # Split the data for train and validation sets and suffle the data
     model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
 
-#print(model.summary())
+print(model.summary())
                     
 #print("Done")
 #exit()
@@ -338,8 +286,6 @@ else:
 # Save the trained model for the test run with the simulator
 model.save("model.h5")  
 print("Model saved")
-
-#exit()
    
     
     
