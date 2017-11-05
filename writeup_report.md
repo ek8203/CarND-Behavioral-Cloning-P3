@@ -37,7 +37,7 @@ Using the Udacity provided simulator and the original [drive.py](drive.py) file,
 ```sh
 python drive.py model.h5
 ```
-[drive.py](drive.py) required no modifications since all normalization of the images are made inside of the model. 
+[drive.py](drive.py) required no modifications since all normalization of the trainig images are made inside of the model. 
 
 #### 3. Submission code is usable and readable
 
@@ -48,6 +48,11 @@ The [model.py](model.py) file contains the code for training and saving the conv
 
 #### 1. An appropriate model architecture has been employed
 
+I started with simple Lenet model without any changes just to test the code and the collected driving data. I did not use the data batch generator at that point since the dataset was not originaly too big. That did not give me good results and I implemented nVidia model which I could train also without a generator and even to drive one lap. Then I tried to improve the model by collecting more data and adding more augmented images. Finaly I ran out of memory that forced me to implement a data generator. In my code I am using a ***use_generator*** flag to train the model with generator.
+
+Later I decided to try using my Lenet model from the Traffic Sign Classifier project and found it was performing very well. I decided to stick with Lenet architecture because because the model was lighter, trained faster and required less memory resources than nVidia. In my code both models are presented but I choose Lenet model for final submission.  
+
+
 My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 ([model.py](model.py) lines 18-24) 
 
 The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
@@ -55,18 +60,18 @@ The model includes RELU layers to introduce nonlinearity (code line 20), and the
 
 #### 2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting ([model.py](model.py) lines 21). 
+The model contains a dropout layer in order to reduce overfitting ([model.py](model.py) lines 212). 
 
 The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 #### 3. Model parameter tuning
 
-The model used an adam optimizer, so the learning rate was not tuned manually ([model.py](model.py) line 25).
+The model used an adam optimizer, so the learning rate was not tuned manually ([model.py](model.py) line 249).
 
 
 #### 4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving and recovering from the left sides of the road. Adding data of the recovery from the right side did not give much improvement but increased the training time so I decided not to add it to the final dataset.
 
 For details about how I created the training data, see the next section. 
 
@@ -75,24 +80,22 @@ For details about how I created the training data, see the next section.
 
 #### 1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
+The overall strategy for deriving a model architecture was to get a minimal training and validation loss.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+My first step was to use a convolution neural network model similar to the what I had design in the Traffic Sign Classifier project. I thought this model might be appropriate because it has already demonstrated good behavior in the previous project. Beside I was curious if I can use it for different tasks like the behavioral cloning with different image size. 
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. To combat the overfitting, I reduced the keep probability of the dropout layer. That was the only modification to get good training and validation results as depicted in the below snapshot:
 
-To combat the overfitting, I modified the model so that ...
-
-Then I ... 
-
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
+![trainig_snap](examples/trainig_snap.png)
 
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
 
 
 #### 2. Final Model Architecture
 
-The final model architecture ([model.py](model.py) lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+The final model architecture ([model.py](model.py) lines 195-219) consisted of a convolution neural network with the following summary of layers and layer sizes:
+
+![summary_snap](examples/summary_snap.png)
 
 Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
 
