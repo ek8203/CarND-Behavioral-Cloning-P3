@@ -24,7 +24,7 @@ A detail witeup of the projects can be found in [writeup_report.md](writeup_repo
 * [README.md](README.md) - This file.
 * [model.py](model.py) - The script used to create and train the model.
 * [drive.py](drive.py) - The script (original) to drive the car.
-* [model.h5](model.h5) - The saved model in HDF5 format.
+* [model.h5](model.h5) - The resulting trained model saved in a single HDF5 file.
 * [writeup_report.md](writeup_report.md) - The project writeup - a markdown file that explains the structure of the network and training approach.
 * [video.mp4](video.mp4) - A video recording of the vehicle driving autonomously one lap around the track.
 
