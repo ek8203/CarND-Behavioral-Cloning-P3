@@ -7,9 +7,9 @@
 ### Overview
 This project demostrates usage of deep neural networks and convolutional neural networks to clone driving behavior. The project uses [Keras Deep Learning library](https://keras.io/) to train and test the model. 
 
-The driving data is collected by driving a car around the first track in the [simulator](https://d17h27t6h515a5.cloudfront.net/topher/2017/February/58ae4419_windows-sim/windows-sim.zip) for Windows. The collected image data and steering angles are used to train a neural network. The output of the model is used to drive the car autonomously around the track.
+The driving data is collected by driving a car around the first track in a driving simulator for Windows. The collected image data and steering angles are used to train a neural network. The output of the model is used to drive the car autonomously around the track.
 
-The project demonstrates usage of two Convolutional Neural Network architectures: [LeNet-5](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf) and [NVIDIA](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/). Both models demonstarated similar training performance on the same dataset.  [LeNet-5](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf) model was taken for from [CarND-Traffic-Sign-Classifier-Project](https://github.com/ek8203/CarND-Traffic-Sign-Classifier-Project) with minor modifications of the regularisation parameters. It was choosen for final submission because it is lighter, faster and consuming less memory resources.  
+The project demonstrates usage of two Convolutional Neural Network architectures: [LeNet-5](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf) and [NVIDIA](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/). Both architectures demonstarated similar training performance on the same dataset.  [LeNet-5](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf) model is taken for from [CarND-Traffic-Sign-Classifier-Project](https://github.com/ek8203/CarND-Traffic-Sign-Classifier-Project) with minor modifications of the regularisation parameters. It was choosen for final submission because it is lighter, faster and consuming less memory resources.  
 
 The project includes following procedures:
 * Use the simulator to collect data of good driving behavior
