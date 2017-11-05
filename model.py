@@ -111,7 +111,8 @@ def generator(samples, correction = 0.2, batch_size=32):
     """
     Input batch data generator
     """
-    num_samples = (len(samples)//batch_size)*batch_size
+#    num_samples = (len(samples)//batch_size)*batch_size
+    num_samples = len(samples)
     
     while True: # Loop forever so the generator never terminates
         sklearn.utils.shuffle(samples)
@@ -132,7 +133,7 @@ def generator(samples, correction = 0.2, batch_size=32):
                 steering_right = steering_center - correction
                 
                 # center camera image
-                image = read_image(line[0])
+                image = read_image(batch_sample[0])
                 images.append(image)    
                 angles.append(steering_center)
                 # add augmented images - flipped vertically (flipCode = 1)
@@ -141,7 +142,7 @@ def generator(samples, correction = 0.2, batch_size=32):
                 angles.append(steering_center * (-1.))
 
                 # left camera image
-                image = read_image(line[1])
+                image = read_image(batch_sample[1])
                 images.append(image)    
                 angles.append(steering_left)        
                 # add augmented images - flipped vertically (flipCode = 1)
@@ -150,15 +151,14 @@ def generator(samples, correction = 0.2, batch_size=32):
                 angles.append(steering_left * (-1.))
 
                 # right camera image
-                image = read_image(line[2])
+                image = read_image(batch_sample[2])
                 images.append(image)    
                 angles.append(steering_right)        
                 # add augmented images - flipped vertically (flipCode = 1)
                 images.append(cv2.flip(image, 1))
                 # reverse the angles
                 angles.append(steering_right * (-1.))
-
-            # trim image to only see section with road
+                
             X_train = np.array(images)
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
@@ -254,7 +254,7 @@ def LeNet_1(shape=(160,320,3), keep_prob=1.0):
     model.add(MaxPooling2D(pool_size=(2, 2)))
     # FLATTEN: 400
     model.add(Flatten())
-    model.add(Dropout(keep_prob))
+    #model.add(Dropout(keep_prob))
     # FC: 120 and ReLU activation 
     model.add(Dense(120, activation='relu'))
     # FC: 84 and ReLU activation
@@ -263,19 +263,23 @@ def LeNet_1(shape=(160,320,3), keep_prob=1.0):
     model.add(Dense(1))
     return model
     
-def nVidia(shape=(160,320,3)):
+def nVidia(shape=(160,320,3), keep_prob=1.0):
     """
     nVidea model architecture:
     INPUT -> 3x(CONV -> ACT) -> 2x(CONV -> ACT)-> FLATTEN -> 4xFC
     """
     model = InputNormalized(shape)
     model.add(Convolution2D(24,5,5, subsample=(2,2), activation='relu'))
+    #model.add(Dropout(keep_prob))
     model.add(Convolution2D(36,5,5, subsample=(2,2), activation='relu'))
+    #model.add(Dropout(keep_prob))
     model.add(Convolution2D(48,5,5, subsample=(2,2), activation='relu'))
+    #model.add(Dropout(keep_prob))
     model.add(Convolution2D(64,3,3, activation='relu'))
+    #model.add(Dropout(keep_prob))
     model.add(Convolution2D(64,3,3, activation='relu'))
     model.add(Flatten())
-    #model.add(Dropout(0.5))
+    model.add(Dropout(keep_prob))
     model.add(Dense(100))
     model.add(Dense(50))
     model.add(Dense(10))
@@ -285,7 +289,7 @@ def nVidia(shape=(160,320,3)):
 #exit()
 
 #model = LeNet()
-model = nVidia()
+model = nVidia(keep_prob=0.05)
 
 # Use Adam optimizer and MSE loss function because it is a regression network. 
 # The model has to minimize the error between the predicted steering measurements and the true measurements
@@ -299,12 +303,12 @@ if use_generator:
     """
     # Split collected data into a train and validation datasets
     from sklearn.model_selection import train_test_split
-    train_samples, validation_samples = train_test_split(lines, test_size=0.2)
+    train_samples, validation_samples = train_test_split(lines*6, test_size=0.2)
     print("Number of train samples:\t{}".format(len(train_samples)))
     print("Number of validation samples:\t{}".format(len(validation_samples)))
 
     BATCH_SIZE = 32
-    EPOCHS = 2
+    EPOCHS = 8
     
     train_generator         = generator(train_samples, batch_size = BATCH_SIZE)
     validation_generator    = generator(validation_samples, batch_size = BATCH_SIZE)
@@ -322,7 +326,7 @@ else:
     # Split the data for train and validation sets and suffle the data
     model.fit(X_train, y_train, nb_epoch=n_epoch, validation_split=0.2, shuffle=True)
 
-print(model.summary())
+#print(model.summary())
                     
 #print("Done")
 #exit()
