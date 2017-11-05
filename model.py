@@ -111,8 +111,8 @@ def generator(samples, correction = 0.2, batch_size=32):
     """
     Input batch data generator
     """
-#    num_samples = (len(samples)//batch_size)*batch_size
-    num_samples = len(samples)
+    num_samples = (len(samples)//batch_size)*batch_size
+#    num_samples = len(samples)
     
     while True: # Loop forever so the generator never terminates
         sklearn.utils.shuffle(samples)
@@ -186,8 +186,9 @@ from keras.layers import Input, Flatten, Dense, Lambda, Cropping2D, Dropout, Res
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 
-shape = (160,320,3)
-#shape = (32,32,3)
+def grayscale_image(input):
+    from keras.backend import tf as ktf
+    return ktf.image.rgb_to_grayscale(input)
 
 def resize_image(input):
     from keras.backend import tf as ktf
@@ -195,20 +196,23 @@ def resize_image(input):
 #    return ktf.image.resize_images(input, (32, 32))
     return ktf.image.resize_images(input, (64, 64))
 
-
-def InputNormalized(shape):
+def InputNormalized(shape=(160,320,3)):
     """
     Model input and normalization layers.
     """
-    #Sequential(shape=(batch_size, height, width, channels))
+    from keras.backend import tf as ktf
+    # Sequential(shape=(batch_size, height, width, channels))
     model = Sequential()
     # Cropping the hood from bottom and the background from top of the image    
     model.add(Cropping2D(cropping=((50,25), (0,0)), input_shape=shape))
+    # Resize the image
     model.add(Lambda(resize_image))
+    # Grayscale the image
+    model.add(Lambda(grayscale_image))
     # Image normalization. That lambda layer could take each pixel in an image and run it through the formulas:
     # pixel_normalized = pixel / 255
     # pixel_mean_centered = pixel_normalized - 0.5
-    model.add(Lambda(lambda x: (x / 255.0) - 0.5))#, input_shape=shape))
+    model.add(Lambda(lambda x: (x / 255.0) - 0.5))
     return model
     
 def LeNet(shape=(160,320,3), keep_prob=0.3):
@@ -226,12 +230,12 @@ def LeNet(shape=(160,320,3), keep_prob=0.3):
     model.add(Convolution2D(32, 5, 5, activation='relu'))
     # POOL: 2x2 max pooling layer immediately following your convolutional layer
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    # FLATTEN: 400
+    # FLATTEN: 800
     model.add(Flatten())
     model.add(Dropout(keep_prob))
-    # FC: 120 and ReLU activation 
+    # FC: 400 and ReLU activation 
     model.add(Dense(400, activation='relu'))
-    # FC: 84 and ReLU activation
+    # FC: 120 and ReLU activation
     model.add(Dense(120, activation='relu'))
     # FC: 1
     model.add(Dense(1))
@@ -288,7 +292,7 @@ def nVidia(shape=(160,320,3), keep_prob=1.0):
 
 #exit()
 
-#model = LeNet()
+#model = LeNet(keep_prob=0.2)
 model = nVidia(keep_prob=0.05)
 
 # Use Adam optimizer and MSE loss function because it is a regression network. 
