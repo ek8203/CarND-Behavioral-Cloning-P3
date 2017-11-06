@@ -48,25 +48,24 @@ The [model.py](model.py) file contains the code for training and saving the conv
 
 #### 1. An appropriate model architecture has been employed
 
-I started with simple Lenet model without any changes just to test the code and the collected driving data. I did not use the data batch generator at that point since the dataset was not originaly too big. That did not give me good results and I implemented nVidia model which I could train also without a generator and even to drive one lap. Then I tried to improve the model by collecting more data and adding more augmented images. Finaly I ran out of memory that forced me to implement a data generator. In my code I am using a ***use_generator*** flag to train the model with generator.
+I started with simple Lenet model without any changes just to test the code and the collected driving data. I did not use the data batch generator at that point since the dataset was not originaly too big. That did not give me good results and I implemented nVidia model which I could train also without a generator and even to drive one lap. Then I tried to improve the model by collecting more data and adding more augmented images. Finaly I ran out of memory that forced me to implement a data generator. In my code I am using a *use_generator* flag to train the model with generator.
 
 Later I decided to try using my Lenet model from the Traffic Sign Classifier project and found it was performing very well. I decided to stick with Lenet architecture because because the model was lighter, trained faster and required less memory resources than nVidia. In my code both models are presented but I choose Lenet model for final submission.  
 
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 ([model.py](model.py) lines 18-24) 
+My model consists of a convolution neural network with 5x5 filter sizes and depths between 16 and 32 ([model.py](model.py) lines 202-209) 
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+The model includes RELU layers to introduce nonlinearity, and the data is normalized in the model using 3 Keras lambda layers (code lines 185-192). 
 
 
 #### 2. Attempts to reduce overfitting in the model
 
 The model contains a dropout layer in order to reduce overfitting ([model.py](model.py) lines 212). 
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 #### 3. Model parameter tuning
 
-The model used an adam optimizer, so the learning rate was not tuned manually ([model.py](model.py) line 249).
+The model used an adam optimizer, so the learning rate was not tuned manually ([model.py](model.py) line 249). The major tuning was in finding a good keep probability value of the dropout value for regularization of the model. 
 
 
 #### 4. Appropriate training data
@@ -104,27 +103,31 @@ Here is a visualization of the architecture (note: visualizing the architecture 
 #### 3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+![center](examples/center_2017_10_22_20_47_26_108.jpg)
 
-![alt text][image2]
+Then I drove one lap in opposit direction in oder to collect more data:
+![reverse](examples/center_2017_10_22_20_59_30_440.jpg)
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
+I then recorded the vehicle recovering from the left side of the road back to center so that the vehicle would learn to get to the center line. I did not take the recovery from the right side that can be simulated by flipping left side recovery images. 
 
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
+To augment the dataset, I also flipped images and angles thinking that this would give a good example of recovering data for driving around the turns.
 
-Then I repeated this process on track two in order to get more data points.
+I also added left and right camera images to the dataset using it as an augmented data.
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+Left camera:
+![left](examples/left_2017_10_22_20_47_26_108.jpg)
+Right camera:
+![right](examples/right_2017_10_22_20_47_26_108.jpg)
 
-![alt text][image6]
-![alt text][image7]
+After the collection process, I had 9920 number of data points. I then preprocessed this data by:
+* Cropping the original images 50 pixels from top to exclude the background view and 25 pixels from bottom to exclude the hood
+* Resizing the images to 64x64
+* Grayscaling the images for easy processing
+* Normalizing and mean centering pixels of the images around zero point
+All preprocessing is performed inside of the model using Lambda layer and Keras backend low level library.
 
-Etc ....
+I finally randomly shuffled the data set and put 20% of the data into a validation set. The final train dataset contained 47616 images and measurements (steering angles). The validation set - 11904 points. 
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 8. I used an adam optimizer so that manually training the learning rate wasn't necessary. Also I implemented a generator to get the training data using a batch size of 32.
 
-
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+I tested the trained model on the first track only - it was too tricky to drive the second track for data collection.
