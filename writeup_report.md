@@ -96,9 +96,6 @@ The final model architecture ([model.py](model.py) lines 195-219) consisted of a
 
 ![summary_snap](examples/summary_snap.png)
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
 
 #### 3. Creation of the Training Set & Training Process
 
@@ -136,3 +133,4 @@ I finally randomly shuffled the data set and put 20% of the data into a validati
 I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 8. I used an adam optimizer so that manually training the learning rate wasn't necessary. Also I implemented a generator to get the training data using a batch size of 32.
 
 I tested the trained model on the first track only - it was too tricky to drive the second track for data collection.
+
