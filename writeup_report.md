@@ -87,7 +87,7 @@ In order to gauge how well the model was working, I split my image and steering 
 
 ![trainig_snap](examples/trainig_snap.png)
 
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+The above image demonstrates a model training process with gradual decrease of the training loss to 0.0023 and validation loss to 0.0015 in 8 epochs. At the end of the process, the vehicle is able to drive autonomously around the first track without leaving the road.
 
 
 #### 2. Final Model Architecture
@@ -96,6 +96,39 @@ The final model architecture ([model.py](model.py) lines 195-219) consisted of a
 
 ![summary_snap](examples/summary_snap.png)
 
+As shown in the above summary snapshot the final model consisted of the following layers:
+
+
+| Layer         		|     Description	        					         | 
+|:----------------------|:------------------------------------------------------:| 
+|||
+| Cropping2D (50,25)x(0,0)	| Inputs 160x320x3, outputs 85x320x3 | 
+|||
+| Lambda - resize      		| Inputs 85x320x3, outputs 64x64x3 | 
+|||
+| Lambda - grayscale   		| Inputs 64x64x3, outputs 64x64x1 | 
+|||
+| Lambda - pixels nomalization   		| Inputs 64x64x1, outputs 64x64x1 | 
+|||
+| Convolution2D 5x5     	| 1x1 stride, VALID padding, outputs 60x60x16 |
+| RELU					|												         |
+|||
+| MaxPooling2D 2x2      	| 2x2 stride, VALID padding, outputs 30x30x16 |
+|||
+| Convolution2D 5x5	    | 1x1 stride, VALID padding, outputs 26x26x32      									         |
+| RELU					|												         |
+|||
+| MaxPooling2D 2x2      	| 2x2 stride, VALID padding, outputs 13x13x32 |
+||| 
+| Flatten               | Outputs 5408|
+| Dropout               |Keep probability 0.3|
+|||
+| Dense		| Outputs 400        									         |
+|||
+| Dense		| Outputs 120        									         |
+|||
+| Dense		| Outputs 1        									         |
+|						|												         |
 
 #### 3. Creation of the Training Set & Training Process
 
