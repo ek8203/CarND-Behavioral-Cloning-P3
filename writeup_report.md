@@ -103,9 +103,11 @@ Here is a visualization of the architecture (note: visualizing the architecture 
 #### 3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+
 ![center](examples/center_2017_10_22_20_47_26_108.jpg)
 
 Then I drove one lap in opposit direction in oder to collect more data:
+
 ![reverse](examples/center_2017_10_22_20_59_30_440.jpg)
 
 I then recorded the vehicle recovering from the left side of the road back to center so that the vehicle would learn to get to the center line. I did not take the recovery from the right side that can be simulated by flipping left side recovery images. 
@@ -115,8 +117,11 @@ To augment the dataset, I also flipped images and angles thinking that this woul
 I also added left and right camera images to the dataset using it as an augmented data.
 
 Left camera:
+
 ![left](examples/left_2017_10_22_20_47_26_108.jpg)
+
 Right camera:
+
 ![right](examples/right_2017_10_22_20_47_26_108.jpg)
 
 After the collection process, I had 9920 number of data points. I then preprocessed this data by:
